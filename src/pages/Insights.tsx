@@ -27,24 +27,40 @@ interface InsightsData {
 }
 
 export default function Insights() {
+  const [insightData, setInsightData] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<InsightsData>({
-    totalStories: 0,
-    totalCompanies: 0,
-    avgWaitDays: 0,
-    verticalDistribution: {},
-    industryDistribution: {},
-    experienceDistribution: {},
-    monthlyTrend: {},
-    channelsDistribution: {},
-  });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchInsights() {
+    let mounted = true;
+
+    const fetchInsights = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
         const storiesRef = collection(db, 'stories');
         const snapshot = await getDocs(storiesRef);
+        
+        if (!mounted) return;
+
         const stories = snapshot.docs.map(doc => doc.data() as Story);
+        
+        if (stories.length === 0) {
+          if (mounted) {
+            setInsightData({
+              totalStories: 0,
+              totalCompanies: 0,
+              avgWaitDays: 0,
+              verticalDistribution: {},
+              industryDistribution: {},
+              experienceDistribution: {},
+              monthlyTrend: {},
+              channelsDistribution: {},
+            });
+          }
+          return;
+        }
 
         // Calculate total stories
         const totalStories = stories.length;
@@ -126,30 +142,67 @@ export default function Insights() {
           return acc;
         }, {} as { [key: string]: number });
 
-        setData({
-          totalStories,
-          totalCompanies,
-          avgWaitDays,
-          verticalDistribution,
-          industryDistribution,
-          experienceDistribution,
-          monthlyTrend,
-          channelsDistribution,
-        });
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching insights:', error);
-        setLoading(false);
+        if (mounted) {
+          setInsightData({
+            totalStories,
+            totalCompanies,
+            avgWaitDays,
+            verticalDistribution,
+            industryDistribution,
+            experienceDistribution,
+            monthlyTrend,
+            channelsDistribution,
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching insights:', err);
+        if (mounted) {
+          setError('Failed to load insights. Please try refreshing the page.');
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    }
+    };
 
     fetchInsights();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4 py-12">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800 text-sm">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-sm text-red-600 hover:text-red-800 font-medium"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-gray-600">Loading insights...</div>
+      </div>
+    );
+  }
+
+  if (!insightData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">No data available</div>
       </div>
     );
   }
@@ -161,7 +214,7 @@ export default function Insights() {
           <nav className="flex items-center space-x-2 text-sm text-gray-500">
             <a href="/" className="hover:text-gray-700 transition-colors">iwg</a>
             <span>&gt;</span>
-            <span className="text-gray-900">insights</span>
+            <span className="text-gray-900">Insights</span>
           </nav>
         </div>
       </div>
@@ -181,7 +234,7 @@ export default function Insights() {
                   <Users className="w-6 h-6 text-blue-500" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-900">{data.totalStories.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-gray-900">{insightData.totalStories.toLocaleString()}</div>
                   <div className="text-sm font-medium text-gray-600">Total Stories</div>
                 </div>
               </div>
@@ -193,7 +246,7 @@ export default function Insights() {
                   <Building2 className="w-6 h-6 text-purple-500" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-gray-900">{data.totalCompanies.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-gray-900">{insightData.totalCompanies.toLocaleString()}</div>
                   <div className="text-sm font-medium text-gray-600">Companies</div>
                 </div>
               </div>
@@ -206,7 +259,7 @@ export default function Insights() {
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-gray-900">
-                    {Object.entries(data.industryDistribution)
+                    {Object.entries(insightData.industryDistribution)
                       .sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A'}
                   </div>
                   <div className="text-sm font-medium text-gray-600">Most Ghosted Industry</div>
@@ -221,7 +274,7 @@ export default function Insights() {
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Verticals Distribution</h3>
               <div className="space-y-4">
-                {Object.entries(data.verticalDistribution)
+                {Object.entries(insightData.verticalDistribution)
                   .sort(([, a], [, b]) => b - a)
                   .slice(0, 5)
                   .map(([vertical, percentage]) => (
@@ -245,7 +298,7 @@ export default function Insights() {
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Industry Distribution</h3>
               <div className="space-y-4">
-                {Object.entries(data.industryDistribution)
+                {Object.entries(insightData.industryDistribution)
                   .sort(([, a], [, b]) => b - a)
                   .slice(0, 5)
                   .map(([industry, percentage]) => (
@@ -269,7 +322,7 @@ export default function Insights() {
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Experience Distribution</h3>
               <div className="space-y-4">
-                {Object.entries(data.experienceDistribution)
+                {Object.entries(insightData.experienceDistribution)
                   .map(([range, percentage]) => (
                     <div key={range} className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -291,7 +344,7 @@ export default function Insights() {
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Communication Channels</h3>
               <div className="space-y-4">
-                {Object.entries(data.channelsDistribution)
+                {Object.entries(insightData.channelsDistribution)
                   .sort(([, a], [, b]) => b - a)
                   .map(([channel, percentage]) => (
                     <div key={channel} className="space-y-2">
@@ -314,7 +367,7 @@ export default function Insights() {
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Monthly Trend</h3>
               <div className="space-y-4">
-                {Object.entries(data.monthlyTrend)
+                {Object.entries(insightData.monthlyTrend)
                   .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
                   .slice(0, 6)
                   .reverse()
@@ -327,7 +380,7 @@ export default function Insights() {
                       <div className="w-full bg-gray-100 rounded-full h-2">
                         <div
                           className="bg-amber-500 h-2 rounded-full"
-                          style={{ width: `${(count / Math.max(...Object.values(data.monthlyTrend))) * 100}%` }}
+                          style={{ width: `${(count / Math.max(...Object.values(insightData.monthlyTrend))) * 100}%` }}
                         />
                       </div>
                     </div>

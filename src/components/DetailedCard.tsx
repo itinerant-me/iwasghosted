@@ -1,4 +1,4 @@
-import { Building2, MapPin, Shield, User2, Clock, Globe, Briefcase, Calendar, MessageCircle, ArrowLeft, ExternalLink, UserCheck, Mail, MessageSquare } from 'lucide-react';
+import { Building2, MapPin, Shield, User2, Clock, Globe, Briefcase, Calendar, MessageCircle, ArrowLeft, ExternalLink, UserCheck, Mail, MessageSquare, UserX } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface DetailedCardProps {
@@ -224,13 +224,14 @@ export default function DetailedCard({ story, onBack }: DetailedCardProps) {
           </div>
           <div className="flex items-center gap-2">
             {story.isAnonymous ? (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-50 text-gray-600 border border-gray-100">
-                Anonymous Report
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-50 text-gray-600 border border-gray-100">
+                <UserX className="w-4 h-4 mr-1.5" />
+                Submitted by: Anonymous User
               </span>
             ) : (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                <Shield className="w-3.5 h-3.5 mr-1" />
-                Verified Report
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 border border-blue-100">
+                <Shield className="w-4 h-4 mr-1.5" />
+                Submitted by: Verified User
               </span>
             )}
           </div>

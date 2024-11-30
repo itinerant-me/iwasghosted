@@ -10,16 +10,39 @@ interface ShameEntry {
   logo: string;
   location: string;
   waitingDays: number;
+  domain: string;
+  ghostingCount: number;
 }
 
 export default function WallOfShame() {
   const [entries, setEntries] = useState<ShameEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchEntries = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
         const entriesRef = collection(db, 'stories');
+        // First get all stories to count per domain
+        const allStoriesQuery = query(entriesRef);
+        const allStoriesSnapshot = await getDocs(allStoriesQuery);
+        
+        if (!mounted) return;
+
+        // Create a map of domain to count
+        const domainCounts = new Map<string, number>();
+        allStoriesSnapshot.docs.forEach(doc => {
+          const domain = doc.data().domain;
+          if (domain) {
+            domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
+          }
+        });
+
         // Query for top 50 longest waiting times
         const q = query(
           entriesRef,
@@ -28,24 +51,61 @@ export default function WallOfShame() {
         );
         
         const querySnapshot = await getDocs(q);
-        const fetchedEntries = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          company: doc.data().company,
-          logo: doc.data().logo,
-          location: doc.data().location,
-          waitingDays: doc.data().waitingDays,
-        }));
         
-        setEntries(fetchedEntries);
-      } catch (error) {
-        console.error('Error fetching entries:', error);
+        if (!mounted) return;
+
+        const fetchedEntries = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            company: data.company,
+            logo: data.logo,
+            location: data.location,
+            waitingDays: data.waitingDays,
+            domain: data.domain,
+            ghostingCount: data.domain ? domainCounts.get(data.domain) || 1 : 1,
+          };
+        });
+        
+        if (mounted) {
+          setEntries(fetchedEntries);
+        }
+      } catch (err) {
+        console.error('Error fetching entries:', err);
+        if (mounted) {
+          setError('Failed to load rankings. Please try refreshing the page.');
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchEntries();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4 py-12">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800 text-sm">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 text-sm text-red-600 hover:text-red-800 font-medium"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -64,7 +124,7 @@ export default function WallOfShame() {
           <div className="space-y-2">
             <h1 className="text-xl font-semibold text-gray-900">Wall of Shame</h1>
             <p className="text-sm text-gray-600">
-              Companies ranked by longest interview ghosting periods. Top 50 shown.
+              Companies ranked by longest interview ghosting periods. Shows total reports per company.
             </p>
           </div>
 
@@ -95,6 +155,7 @@ export default function WallOfShame() {
                   logo={entry.logo}
                   location={entry.location}
                   waitingDays={entry.waitingDays}
+                  ghostingCount={entry.ghostingCount}
                 />
               ))}
             </div>

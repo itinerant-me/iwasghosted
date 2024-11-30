@@ -1,10 +1,128 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Share2, BookOpen, Shield, ChartBar, ChevronRight, Users, TrendingUp, CheckCircle2, ListCollapse, MessageSquare, Mail, Coffee } from 'lucide-react';
-import { useEffect } from 'react';
+import { ArrowRight, Share2, BookOpen, Shield, ChartBar, ChevronRight, Users, TrendingUp, CheckCircle2, ListCollapse, MessageSquare, Mail, Coffee, ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { collection, getDocs, query } from 'firebase/firestore';
+import { db } from '../firebase';
+
+interface Metrics {
+  totalStories: number;
+  averageWaitDays: number;
+  uniqueCompanies: number;
+  topIndustry: {
+    name: string;
+    percentage: number;
+  };
+}
 
 export default function LandingPage() {
+  const [metrics, setMetrics] = useState<Metrics>({
+    totalStories: 0,
+    averageWaitDays: 0,
+    uniqueCompanies: 0,
+    topIndustry: {
+      name: '',
+      percentage: 0
+    }
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      question: "What is i-was-ghosted?",
+      answer: "i-was-ghosted is a platform where job seekers can share their experiences of being 'ghosted' during the interview process. We aim to create transparency in hiring practices and help others avoid similar situations."
+    },
+    {
+      question: "How do you verify the stories?",
+      answer: "While stories can be submitted anonymously, we offer an optional verification process where users can verify their existence via google authentication. Verified user stories are marked accordingly to maintain credibility."
+    },
+    {
+      question: "Can companies respond to stories?",
+      answer: "Not right now, but in near future yes - verified company representatives would be able to respond to stories about their organization. This promotes dialogue and helps companies improve their hiring processes."
+    },
+    {
+      question: "Will my identity be protected?",
+      answer: "Absolutely. You can choose to remain completely anonymous when sharing your story. We never share personal identifying information without explicit consent."
+    },
+    {
+      question: "What happens after I share my story?",
+      answer: "Your story becomes part of our database, helping others understand company hiring practices. It may also prompt companies to improve their interview processes and communication."
+    },
+    {
+      question: "Can I edit or remove my story later?",
+      answer: "Currently, only content that is abusive in nature or carries Personal identification are struck down. In future, you can edit or remove your story at any time through your account. If you posted anonymously, you'll not be allowed to edit or remove the story."
+    }
+  ];
+
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    async function fetchMetrics() {
+      try {
+        // Fetch all stories
+        const storiesQuery = query(collection(db, 'stories'));
+        const storiesSnapshot = await getDocs(storiesQuery);
+        const stories = storiesSnapshot.docs.map(doc => doc.data());
+
+        // Calculate total stories
+        const totalStories = stories.length;
+
+        // Calculate average wait days - parse the string to number
+        const totalWaitDays = stories.reduce((acc, story) => {
+          const waitDays = parseInt(story.waitingDays || '0', 10);
+          return acc + waitDays;
+        }, 0);
+        const averageWaitDays = Math.round(totalWaitDays / totalStories) || 0;
+
+        // Calculate unique companies using the domain field
+        const uniqueCompanies = new Set(stories.map(story => story.domain)).size;
+
+        // Calculate industry distribution
+        const industries = stories.reduce((acc, story) => {
+          const industry = story.industry || 'Other';
+          acc[industry] = (acc[industry] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        // Find top industry
+        let topIndustry = { name: '', count: 0 };
+        Object.entries(industries).forEach(([industry, count]) => {
+          if (count > topIndustry.count) {
+            topIndustry = { name: industry, count };
+          }
+        });
+
+        const topIndustryPercentage = Math.round((topIndustry.count / totalStories) * 100);
+
+        setMetrics({
+          totalStories,
+          averageWaitDays,
+          uniqueCompanies,
+          topIndustry: {
+            name: topIndustry.name,
+            percentage: topIndustryPercentage
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+        // Set fallback values in case of error
+        setMetrics({
+          totalStories: 0,
+          averageWaitDays: 0,
+          uniqueCompanies: 0,
+          topIndustry: {
+            name: 'Tech',
+            percentage: 0
+          }
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchMetrics();
   }, []);
 
   return (
@@ -61,20 +179,44 @@ export default function LandingPage() {
           {/* Stats */}
           <div className="mt-20 grid grid-cols-1 sm:grid-cols-4 gap-8 max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-              <div className="text-3xl font-bold text-gray-900">1,234</div>
+              <div className="text-3xl font-bold text-gray-900">
+                {isLoading ? (
+                  <div className="h-9 bg-gray-100 animate-pulse rounded" />
+                ) : (
+                  metrics.totalStories.toLocaleString()
+                )}
+              </div>
               <div className="mt-1 text-sm text-gray-600">Stories Shared</div>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-              <div className="text-3xl font-bold text-gray-900">42</div>
+              <div className="text-3xl font-bold text-gray-900">
+                {isLoading ? (
+                  <div className="h-9 bg-gray-100 animate-pulse rounded" />
+                ) : (
+                  metrics.averageWaitDays
+                )}
+              </div>
               <div className="mt-1 text-sm text-gray-600">Days Average Wait</div>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-              <div className="text-3xl font-bold text-gray-900">789</div>
+              <div className="text-3xl font-bold text-gray-900">
+                {isLoading ? (
+                  <div className="h-9 bg-gray-100 animate-pulse rounded" />
+                ) : (
+                  metrics.uniqueCompanies.toLocaleString()
+                )}
+              </div>
               <div className="mt-1 text-sm text-gray-600">Companies Listed</div>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-              <div className="text-3xl font-bold text-gray-900">82%</div>
-              <div className="mt-1 text-sm text-gray-600">Tech Industry</div>
+              <div className="text-3xl font-bold text-gray-900">
+                {isLoading ? (
+                  <div className="h-9 bg-gray-100 animate-pulse rounded" />
+                ) : (
+                  `${metrics.topIndustry.percentage}%`
+                )}
+              </div>
+              <div className="mt-1 text-sm text-gray-600">{metrics.topIndustry.name} Industry</div>
             </div>
           </div>
         </div>
@@ -206,6 +348,42 @@ export default function LandingPage() {
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Community Support</h3>
               <p className="text-gray-600">Connect with others who've had similar experiences</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-24 bg-gray-50">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900">Frequently Asked Questions</h2>
+            <p className="mt-4 text-lg text-gray-600">Everything you need to know about sharing and browsing interview experiences</p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden transition-all duration-200"
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                  className="w-full px-6 py-4 text-left flex items-center justify-between hover:bg-gray-50"
+                >
+                  <span className="text-base font-medium text-gray-900">{faq.question}</span>
+                  <ChevronDown
+                    className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+                      openFaq === index ? 'transform rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                {openFaq === index && (
+                  <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+                    <p className="text-gray-600">{faq.answer}</p>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>

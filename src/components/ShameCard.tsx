@@ -1,13 +1,14 @@
-import { Building2, MapPin, Clock } from 'lucide-react';
+import { Building2, MapPin, Clock, AlertTriangle } from 'lucide-react';
 
 interface ShameCardProps {
   company: string;
   logo: string;
   location: string;
   waitingDays: number;
+  ghostingCount: number;
 }
 
-export default function ShameCard({ company, logo, location, waitingDays }: ShameCardProps) {
+export default function ShameCard({ company, logo, location, waitingDays, ghostingCount }: ShameCardProps) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-200">
       <div className="flex items-start gap-4">
@@ -32,10 +33,18 @@ export default function ShameCard({ company, logo, location, waitingDays }: Sham
             <MapPin className="w-3.5 h-3.5 text-gray-400" />
             <span className="truncate">{location}</span>
           </p>
-          <div className="flex items-center gap-1.5 text-red-600">
-            <Clock className="w-3.5 h-3.5" />
-            <span className="font-semibold">{waitingDays} days</span>
-            <span className="text-sm">of silence</span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-red-600">
+              <Clock className="w-3.5 h-3.5" />
+              <span className="font-semibold">{waitingDays} days</span>
+              <span className="text-sm">of silence</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-amber-600">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span className="text-sm">
+                <span className="font-semibold">{ghostingCount}</span> {ghostingCount === 1 ? 'report' : 'reports'} of ghosting
+              </span>
+            </div>
           </div>
         </div>
       </div>
