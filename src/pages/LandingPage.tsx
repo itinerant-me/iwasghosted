@@ -20,7 +20,7 @@ export default function LandingPage() {
           </h1>
           
           <p className="mt-6 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-            Building transparency in tech hiring, one story at a time. Join our community-driven initiative to make interview processes more accountable.
+            Building transparency in hiring, one story at a time. Join our community-driven initiative to make interview processes more accountable.
           </p>
           
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -199,7 +199,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-3xl font-bold mb-6">Ready to Share Your Story?</h2>
           <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
-            Join thousands of tech professionals making the hiring process more transparent.
+            Join thousands of professionals making the hiring process more transparent.
             Your story matters.
           </p>
           <Link
