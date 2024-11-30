@@ -161,7 +161,7 @@ export default function GhostedStory() {
               </button>
               <button
                 onClick={handleSubmit}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
               >
                 <Send className="w-4 h-4" />
                 Submit Story

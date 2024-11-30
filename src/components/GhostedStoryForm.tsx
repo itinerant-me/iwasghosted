@@ -1,4 +1,4 @@
-import { Calendar, Building2, MapPin, Link, MessageSquare, Briefcase, Check, FolderTree } from 'lucide-react';
+import { Calendar, Building2, MapPin, Link, MessageSquare, Briefcase, Check, FolderTree, Send } from 'lucide-react';
 import { useState } from 'react';
 
 interface FormData {
@@ -196,6 +196,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
   const [showCustomDepartment, setShowCustomDepartment] = useState(false);
   const [showCustomIndustry, setShowCustomIndustry] = useState(false);
   const [showCustomVertical, setShowCustomVertical] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const fetchCompanyLogo = async (domain: string) => {
     if (!domain) return;
@@ -230,16 +231,51 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
     }));
   };
 
-  const handlePreview = () => {
-    onPreview?.();
+  const validateForm = (): boolean => {
+    const requiredFields = {
+      company: 'Company Name',
+      domain: 'Company Domain',
+      role: 'Role',
+      department: 'Department',
+      industry: 'Industry',
+      vertical: 'Vertical',
+      yearsOfExperience: 'Years of Experience',
+      location: 'Location',
+      roundGhosted: 'Interview Round',
+      communicationEndDate: 'Last Communication Date',
+      channels: 'Communication Channels',
+      waitingDays: 'Days Waited',
+      processStartDate: 'Process Start Date',
+      applicationSource: 'Application Source'
+    };
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!formData[field as keyof FormData] || 
+          (Array.isArray(formData[field as keyof FormData]) && (formData[field as keyof FormData] as any[]).length === 0) ||
+          formData[field as keyof FormData] === '') {
+        setValidationError(`${label} is required`);
+        return false;
+      }
+    }
+
+    setValidationError(null);
+    return true;
   };
 
-  const handleSubmit = () => {
-    onSubmit?.();
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateForm()) {
+      onSubmit?.();
+    }
   };
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {validationError && (
+        <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+          {validationError}
+        </div>
+      )}
       {/* Company Section */}
       <div className="space-y-3">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
@@ -256,6 +292,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
               onChange={handleInputChange}
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter company name"
+              required
             />
           </div>
           <div>
@@ -266,7 +303,8 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
               value={formData.domain}
               onChange={handleInputChange}
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="example.com"
+              placeholder="e.g., company.com"
+              required
             />
           </div>
         </div>
@@ -282,6 +320,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
               value={formData.industry}
               onChange={handleInputChange}
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
             >
               <option value="">Select Industry</option>
               {industries.map(industry => (
@@ -310,6 +349,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
               value={formData.vertical}
               onChange={handleInputChange}
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
             >
               <option value="">Select Vertical</option>
               {verticals.map(vertical => (
@@ -375,6 +415,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
               onChange={handleInputChange}
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Job title"
+              required
             />
           </div>
           <div>
@@ -386,6 +427,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
               onChange={handleInputChange}
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="City, Country"
+              required
             />
           </div>
         </div>
@@ -401,6 +443,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
               value={formData.department}
               onChange={handleInputChange}
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
             >
               <option value="">Select Department</option>
               {departments.map(dept => (
@@ -431,6 +474,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
               step="0.5"
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Years of experience"
+              required
             />
           </div>
         </div>
@@ -464,6 +508,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
             value={formData.roundGhosted}
             onChange={handleInputChange}
             className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+            required
           >
             <option value="">Select Round</option>
             {interviewRounds.map(round => (
@@ -509,6 +554,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
               value={formData.processStartDate}
               onChange={handleInputChange}
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
             />
           </div>
           <div>
@@ -519,6 +565,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
               value={formData.communicationEndDate}
               onChange={handleInputChange}
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
             />
           </div>
         </div>
@@ -549,6 +596,7 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
               onChange={handleInputChange}
               min="0"
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
             />
           </div>
 
@@ -567,18 +615,12 @@ export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPr
       </div>
 
       {/* Form Actions */}
-      <div className="flex justify-end gap-4">
-        <button
-          type="button"
-          onClick={handlePreview}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-        >
-          Preview Story
-        </button>
+      <div className="flex justify-end">
         <button
           type="submit"
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 transition-colors"
         >
+          <Send className="w-4 h-4" />
           Submit Story
         </button>
       </div>

@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide preview functionality on mobile */
+@media (max-width: 768px) {
+  /* Hide preview content */
+  .preview-content {
+    display: none !important;
+  }
+
+  /* Hide preview button but keep submit button in header */
+  .flex.items-center.gap-3 button:first-child {
+    display: none !important;
+  }
+
+  /* Hide preview button in form actions but keep submit button */
+  .flex.justify-end.gap-4 button:first-child {
+    display: none !important;
+  }
+
+  /* Adjust grid layout when preview is hidden */
+  .max-w-7xl.mx-auto.px-4.sm\:px-6.py-8 {
+    display: block !important;
+  }
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 }

@@ -1,6 +1,13 @@
 import { ChevronRight } from 'lucide-react';
+import { useEffect } from 'react';
+import { Mail } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function About() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Breadcrumb */}
@@ -101,12 +108,56 @@ export default function About() {
         <div className="mt-16 text-center">
           <a 
             href="/submit" 
-            className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-black text-white hover:bg-gray-800 transition-colors"
           >
             Share Your Story
           </a>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-100">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          {/* Main Footer Content */}
+          <div className="py-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Brand Section */}
+            <div className="space-y-3">
+              <div>
+                <Link to="/" className="inline-block">
+                  <h3 className="text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors">iwg</h3>
+                </Link>
+                <p className="text-base text-gray-600 mt-1">Unmasking the Silence, Exposing the Truth</p>
+              </div>
+              <a 
+                href="mailto:itinerant.me@gmail.com"
+                className="inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors group"
+              >
+                <Mail className="w-5 h-5 group-hover:text-blue-600 transition-colors" />
+                <span className="text-sm">itinerant.me@gmail.com</span>
+              </a>
+            </div>
+
+            {/* Links Section */}
+            <div className="md:flex md:justify-end">
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Legal</h4>
+                <div className="flex flex-col space-y-2">
+                  <Link to="/terms" className="text-base text-gray-600 hover:text-blue-600 transition-colors">Terms of Service</Link>
+                  <Link to="/privacy" className="text-base text-gray-600 hover:text-blue-600 transition-colors">Privacy Policy</Link>
+                  <Link to="/about" className="text-base text-gray-600 hover:text-blue-600 transition-colors">About Us</Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Copyright Bar */}
+          <div className="py-4 border-t border-gray-100">
+            <p className="text-sm text-gray-600 text-center">
+              &copy; {new Date().getFullYear()} iwg inc. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

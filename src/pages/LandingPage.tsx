@@ -1,7 +1,12 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Share2, BookOpen, Shield, ChartBar, ChevronRight, Users, TrendingUp, CheckCircle2, ListCollapse, MessageSquare, Mail } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function LandingPage() {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -221,7 +226,7 @@ export default function LandingPage() {
             <div className="space-y-3">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900">iwg</h3>
-                <p className="text-base text-gray-600 mt-1">Making hiring transparent again</p>
+                <p className="text-base text-gray-600 mt-1">Unmasking the Silence, Exposing the Truth</p>
               </div>
               <a 
                 href="mailto:itinerant.me@gmail.com"
