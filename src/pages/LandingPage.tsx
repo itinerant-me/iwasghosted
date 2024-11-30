@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Share2, BookOpen, Shield, ChartBar, ChevronRight, Users, TrendingUp, CheckCircle2, ListCollapse, MessageSquare, Mail } from 'lucide-react';
+import { ArrowRight, Share2, BookOpen, Shield, ChartBar, ChevronRight, Users, TrendingUp, CheckCircle2, ListCollapse, MessageSquare, Mail, Coffee } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function LandingPage() {
@@ -9,6 +9,17 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
+      {/* Floating Buy Me a Coffee Button */}
+      <a
+        href="https://buymeacoffee.com/itinerantmq"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-5 right-5 inline-flex items-center gap-2 px-4 py-2.5 bg-[#FFDD00] text-gray-900 rounded-full shadow-lg hover:bg-[#FFDD00]/90 transition-all hover:shadow-xl group z-50"
+      >
+        <Coffee className="w-5 h-5" />
+        <span className="font-medium text-sm whitespace-nowrap">Support me with coffee</span>
+      </a>
+
       {/* Hero Section */}
       <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
         <div className="absolute inset-0 bg-grid-gray-900/[0.02] bg-[size:32px_32px]" />

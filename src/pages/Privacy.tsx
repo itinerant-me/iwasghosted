@@ -1,6 +1,5 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Mail, Coffee } from 'lucide-react';
 import { useEffect } from 'react';
-import { Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Privacy() {
@@ -10,6 +9,17 @@ export default function Privacy() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Floating Buy Me a Coffee Button */}
+      <a
+        href="https://buymeacoffee.com/itinerantmq"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-5 right-5 inline-flex items-center gap-2 px-4 py-2.5 bg-[#FFDD00] text-gray-900 rounded-full shadow-lg hover:bg-[#FFDD00]/90 transition-all hover:shadow-xl group z-50"
+      >
+        <Coffee className="w-5 h-5" />
+        <span className="font-medium text-sm whitespace-nowrap">Support me with coffee</span>
+      </a>
+
       {/* Breadcrumb */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-8">
         <nav className="flex items-center space-x-2 text-sm text-gray-500">
