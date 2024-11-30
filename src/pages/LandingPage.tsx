@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Share2, BookOpen, Shield, ChartBar, ChevronRight, Users, TrendingUp, CheckCircle2, ListCollapse, MessageSquare, Mail, Coffee, ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { collection, getDocs, query } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../lib/firebase';
 
 interface Metrics {
   totalStories: number;
@@ -25,6 +25,7 @@ export default function LandingPage() {
     }
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const faqs = [
@@ -59,17 +60,25 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
+    let mounted = true;
+
     async function fetchMetrics() {
       try {
+        setIsLoading(true);
+        setError(null);
+
         // Fetch all stories
         const storiesQuery = query(collection(db, 'stories'));
         const storiesSnapshot = await getDocs(storiesQuery);
+        
+        if (!mounted) return;
+        
         const stories = storiesSnapshot.docs.map(doc => doc.data());
 
         // Calculate total stories
         const totalStories = stories.length;
 
-        // Calculate average wait days - parse the string to number
+        // Calculate average wait days
         const totalWaitDays = stories.reduce((acc, story) => {
           const waitDays = parseInt(story.waitingDays || '0', 10);
           return acc + waitDays;
@@ -96,37 +105,60 @@ export default function LandingPage() {
 
         const topIndustryPercentage = Math.round((topIndustry.count / totalStories) * 100);
 
-        setMetrics({
-          totalStories,
-          averageWaitDays,
-          uniqueCompanies,
-          topIndustry: {
-            name: topIndustry.name,
-            percentage: topIndustryPercentage
-          }
-        });
+        if (mounted) {
+          setMetrics({
+            totalStories,
+            averageWaitDays,
+            uniqueCompanies,
+            topIndustry: {
+              name: topIndustry.name,
+              percentage: topIndustryPercentage
+            }
+          });
+        }
       } catch (error) {
         console.error('Error fetching metrics:', error);
-        // Set fallback values in case of error
-        setMetrics({
-          totalStories: 0,
-          averageWaitDays: 0,
-          uniqueCompanies: 0,
-          topIndustry: {
-            name: 'Tech',
-            percentage: 0
-          }
-        });
+        if (mounted) {
+          setError('Failed to load metrics. Please try refreshing the page.');
+          // Set fallback values
+          setMetrics({
+            totalStories: 0,
+            averageWaitDays: 0,
+            uniqueCompanies: 0,
+            topIndustry: {
+              name: 'Tech',
+              percentage: 0
+            }
+          });
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     fetchMetrics();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
     <div className="min-h-screen">
+      {error && (
+        <div className="fixed top-4 right-4 bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg">
+          <p className="text-red-800 text-sm">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 text-sm text-red-600 hover:text-red-800 font-medium"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
       {/* Floating Buy Me a Coffee Button */}
       <a
         href="https://buymeacoffee.com/itinerantmq"
