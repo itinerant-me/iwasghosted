@@ -27,11 +27,9 @@ interface StoryPreviewProps {
     isAnonymous?: boolean;
     isVerified?: boolean;
   };
-  view: 'short' | 'detailed' | 'mini';
-  onBack?: any;
 }
 
-export default function StoryPreview({ story, view = 'mini', onBack }: StoryPreviewProps) {
+export default function StoryPreview({ story }: StoryPreviewProps) {
   const getDisplayValue = (value: string, customValue?: string) => {
     if (value === 'Other (Custom)' && customValue) {
       return customValue;

@@ -29,7 +29,6 @@ interface GhostedStoryFormProps {
   formData: FormData;
   setFormData: React.Dispatch<React.SetStateAction<FormData>>;
   onSubmit?: () => void;
-  onPreview?: () => void;
 }
 
 const departments = [
@@ -192,7 +191,11 @@ const interviewRounds = [
   'HR Round',
 ];
 
-export default function GhostedStoryForm({ formData, setFormData, onSubmit, onPreview }: GhostedStoryFormProps) {
+export default function GhostedStoryForm({ 
+  formData, 
+  setFormData, 
+  onSubmit 
+}: GhostedStoryFormProps) {
   const [showCustomDepartment, setShowCustomDepartment] = useState(false);
   const [showCustomIndustry, setShowCustomIndustry] = useState(false);
   const [showCustomVertical, setShowCustomVertical] = useState(false);
