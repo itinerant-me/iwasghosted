@@ -29,6 +29,7 @@ interface GhostedStoryFormProps {
   formData: FormData;
   setFormData: React.Dispatch<React.SetStateAction<FormData>>;
   onSubmit?: () => void;
+  initialData?: FormData;
 }
 
 const departments = [

@@ -173,13 +173,12 @@ export default function GhostedStory() {
             formData={formData}
             setFormData={setFormData}
             onSubmit={handleSubmit}
-            onPreview={() => setShowPreview(true)}
           />
         </div>
 
         {showPreview && (
           <div className="sticky top-24">
-            <StoryPreview story={formData} view="detailed" />
+            <StoryPreview story={formData} />
           </div>
         )}
       </div>
