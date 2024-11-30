@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow anyone to read stories
+    match /stories/{storyId} {
+      allow read: true;
+      
+      // Allow writes only if:
+      // 1. For anonymous submissions (when isAnonymous is true)
+      // 2. For verified submissions (when user is authenticated and uid matches)
+      allow create: if
+        (request.resource.data.isAnonymous == true) ||
+        (request.auth != null && 
+         request.resource.data.userId == request.auth.uid &&
+         request.resource.data.isVerified == true);
+         
+      // Allow updates only by the original author
+      allow update: if
+        request.auth != null &&
+        resource.data.userId == request.auth.uid;
+        
+      // Allow deletion only by the original author
+      allow delete: if
+        request.auth != null &&
+        resource.data.userId == request.auth.uid;
+    }
+  }
+}
