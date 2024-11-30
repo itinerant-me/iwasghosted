@@ -215,26 +215,25 @@ export default function DetailedCard({ story, onBack }: DetailedCardProps) {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 pt-4 flex items-center justify-between text-sm text-gray-500">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            <span>
-              Reported on {story.submittedAt ? format(new Date(story.submittedAt), 'MMM d, yyyy') : 'Recently'}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="flex flex-nowrap justify-between items-center gap-2 text-xs text-gray-500 border-t border-gray-100 pt-4 mt-4">
+          <span className="flex items-center gap-1.5 whitespace-nowrap">
+            <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+            Reported on {story.submittedAt ? format(new Date(story.submittedAt), 'MMM d, yyyy') : 'Recently'}
+          </span>
+          
+          <span className="flex items-center gap-1.5 whitespace-nowrap">
             {story.isAnonymous ? (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-50 text-gray-600 border border-gray-100">
-                <UserX className="w-4 h-4 mr-1.5" />
+              <>
+                <UserX className="w-3.5 h-3.5 flex-shrink-0" />
                 Submitted by: Anonymous User
-              </span>
+              </>
             ) : (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-50 text-blue-700 border border-blue-100">
-                <Shield className="w-4 h-4 mr-1.5" />
+              <>
+                <UserCheck className="w-3.5 h-3.5 flex-shrink-0" />
                 Submitted by: Verified User
-              </span>
+              </>
             )}
-          </div>
+          </span>
         </div>
       </div>
     </div>

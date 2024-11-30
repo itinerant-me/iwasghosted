@@ -8,7 +8,17 @@ export default function Terms() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
+      <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
+        <div className="max-w-3xl mx-auto px-4 py-3">
+          <nav className="flex items-center space-x-2 text-sm text-gray-500">
+            <a href="/" className="hover:text-gray-700 transition-colors">iwg</a>
+            <ChevronRight className="w-4 h-4" />
+            <span className="text-gray-900">terms</span>
+          </nav>
+        </div>
+      </div>
+
       {/* Floating Buy Me a Coffee Button */}
       <a
         href="https://buymeacoffee.com/itinerantmq"
@@ -19,15 +29,6 @@ export default function Terms() {
         <Coffee className="w-5 h-5" />
         <span className="font-medium text-sm whitespace-nowrap">Support me with coffee</span>
       </a>
-
-      {/* Breadcrumb */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-8">
-        <nav className="flex items-center space-x-2 text-sm text-gray-500">
-          <a href="/" className="hover:text-gray-700 transition-colors">iwg</a>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-gray-900">terms</span>
-        </nav>
-      </div>
 
       {/* Terms Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16">

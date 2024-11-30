@@ -20,19 +20,15 @@ export default function WallOfShame() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
     const fetchEntries = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        setError(null);
-
         const entriesRef = collection(db, 'stories');
+        
         // First get all stories to count per domain
         const allStoriesQuery = query(entriesRef);
         const allStoriesSnapshot = await getDocs(allStoriesQuery);
-        
-        if (!mounted) return;
 
         // Create a map of domain to count
         const domainCounts = new Map<string, number>();
@@ -51,9 +47,6 @@ export default function WallOfShame() {
         );
         
         const querySnapshot = await getDocs(q);
-        
-        if (!mounted) return;
-
         const fetchedEntries = querySnapshot.docs.map(doc => {
           const data = doc.data();
           return {
@@ -67,26 +60,16 @@ export default function WallOfShame() {
           };
         });
         
-        if (mounted) {
-          setEntries(fetchedEntries);
-        }
+        setEntries(fetchedEntries);
       } catch (err) {
         console.error('Error fetching entries:', err);
-        if (mounted) {
-          setError('Failed to load rankings. Please try refreshing the page.');
-        }
+        setError('Failed to load rankings. Please try refreshing the page.');
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchEntries();
-
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   if (error) {

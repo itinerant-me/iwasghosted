@@ -37,19 +37,14 @@ export default function AllStories() {
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
     const fetchStories = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        setError(null);
-        
         const storiesRef = collection(db, 'stories');
         const q = query(storiesRef, orderBy('submittedAt', 'desc'));
         const querySnapshot = await getDocs(q);
         
-        if (!mounted) return;
-
         const fetchedStories = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
@@ -58,21 +53,13 @@ export default function AllStories() {
         setStories(fetchedStories);
       } catch (err) {
         console.error('Error fetching stories:', err);
-        if (mounted) {
-          setError('Failed to load stories. Please try refreshing the page.');
-        }
+        setError('Failed to load stories. Please try refreshing the page.');
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchStories();
-
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   const handleStoryClick = (story: Story) => {

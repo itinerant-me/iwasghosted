@@ -89,7 +89,7 @@ export default function MiniCard({ story }: MiniCardProps) {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
+      <div className="px-4 pt-1 pb-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
         <span className="flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5 flex-shrink-0" />
           {story.submittedAt ? format(new Date(story.submittedAt), 'MMM d, yyyy') : 'Recently'}

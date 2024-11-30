@@ -1,135 +1,103 @@
-import { useState, useEffect } from 'react';
-import { Users, Building2, Target } from 'lucide-react';
-import { collection, getDocs } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { Users, Building2, Briefcase, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface Story {
-  company: string;
-  domain: string;
-  vertical: string;
-  industry: string;
-  yearsOfExperience: number;
-  waitingDays: number;
-  submittedAt: string;
-  channels: string[];
+interface Distribution {
+  [key: string]: number;
 }
 
-interface InsightsData {
+interface InsightData {
   totalStories: number;
-  totalCompanies: number;
-  avgWaitDays: number;
-  verticalDistribution: { [key: string]: number };
-  industryDistribution: { [key: string]: number };
-  experienceDistribution: { [key: string]: number };
-  monthlyTrend: { [key: string]: number };
-  channelsDistribution: { [key: string]: number };
+  averageWaitDays: number;
+  uniqueCompanies: number;
+  topIndustry: {
+    name: string;
+    percentage: number;
+  };
+  verticalDistribution: Distribution;
+  industryDistribution: Distribution;
+  experienceDistribution: Distribution;
+  channelsDistribution: Distribution;
+  monthlyTrend: Distribution;
 }
 
 export default function Insights() {
-  const [insightData, setInsightData] = useState<InsightsData | null>(null);
+  const [insightData, setInsightData] = useState<InsightData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-
     const fetchInsights = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        setError(null);
-
         const storiesRef = collection(db, 'stories');
-        const snapshot = await getDocs(storiesRef);
-        
-        if (!mounted) return;
-
-        const stories = snapshot.docs.map(doc => doc.data() as Story);
+        const q = query(storiesRef);
+        const querySnapshot = await getDocs(q);
+        const stories = querySnapshot.docs.map(doc => doc.data());
         
         if (stories.length === 0) {
-          if (mounted) {
-            setInsightData({
-              totalStories: 0,
-              totalCompanies: 0,
-              avgWaitDays: 0,
-              verticalDistribution: {},
-              industryDistribution: {},
-              experienceDistribution: {},
-              monthlyTrend: {},
-              channelsDistribution: {},
-            });
-          }
+          setInsightData({
+            totalStories: 0,
+            averageWaitDays: 0,
+            uniqueCompanies: 0,
+            topIndustry: {
+              name: 'N/A',
+              percentage: 0
+            },
+            verticalDistribution: {},
+            industryDistribution: {},
+            experienceDistribution: {},
+            channelsDistribution: {},
+            monthlyTrend: {}
+          });
           return;
         }
 
-        // Calculate total stories
+        // Calculate basic insights
         const totalStories = stories.length;
-
-        // Calculate unique companies by domain
-        const uniqueDomains = new Set(stories.map(story => story.domain));
-        const totalCompanies = uniqueDomains.size;
-
-        // Calculate average waiting days
-        let totalWaitDays = 0;
-        let storiesWithWaitDays = 0;
-        stories.forEach(story => {
-          if (typeof story.waitingDays === 'number') {
-            totalWaitDays += story.waitingDays;
-            storiesWithWaitDays++;
-          }
-        });
-        const avgWaitDays = storiesWithWaitDays > 0 ? Math.round(totalWaitDays / storiesWithWaitDays) : 0;
+        const totalWaitDays = stories.reduce((acc, story) => {
+          const waitDays = typeof story.waitingDays === 'number' 
+            ? story.waitingDays 
+            : parseInt(story.waitingDays || '0', 10);
+          return acc + waitDays;
+        }, 0);
+        const averageWaitDays = Math.round(totalWaitDays / totalStories);
+        const uniqueCompanies = new Set(stories.map(story => story.domain)).size;
 
         // Calculate vertical distribution
-        const verticalCounts: { [key: string]: number } = {};
+        const verticalCounts: Distribution = {};
         stories.forEach(story => {
           const vertical = story.vertical || 'Other';
           verticalCounts[vertical] = (verticalCounts[vertical] || 0) + 1;
         });
-        const verticalDistribution = Object.entries(verticalCounts).reduce((acc, [key, value]) => {
-          acc[key] = Math.round((value / totalStories) * 100);
-          return acc;
-        }, {} as { [key: string]: number });
 
         // Calculate industry distribution
-        const industryCounts: { [key: string]: number } = {};
+        const industryCounts: Distribution = {};
         stories.forEach(story => {
           const industry = story.industry || 'Other';
           industryCounts[industry] = (industryCounts[industry] || 0) + 1;
         });
-        const industryDistribution = Object.entries(industryCounts).reduce((acc, [key, value]) => {
-          acc[key] = Math.round((value / totalStories) * 100);
-          return acc;
-        }, {} as { [key: string]: number });
 
-        // Calculate experience distribution in 3-year buckets
-        const experienceBuckets: { [key: string]: number } = {
+        // Calculate experience distribution
+        const experienceCounts: Distribution = {
           '0-3 years': 0,
           '4-6 years': 0,
           '7-9 years': 0,
-          '10+ years': 0,
+          '10+ years': 0
         };
         stories.forEach(story => {
-          const years = story.yearsOfExperience;
-          if (years <= 3) experienceBuckets['0-3 years']++;
-          else if (years <= 6) experienceBuckets['4-6 years']++;
-          else if (years <= 9) experienceBuckets['7-9 years']++;
-          else experienceBuckets['10+ years']++;
-        });
-        const experienceDistribution = Object.entries(experienceBuckets).reduce((acc, [key, value]) => {
-          acc[key] = Math.round((value / totalStories) * 100);
-          return acc;
-        }, {} as { [key: string]: number });
-
-        // Calculate monthly trend
-        const monthlyTrend: { [key: string]: number } = {};
-        stories.forEach(story => {
-          const month = format(new Date(story.submittedAt), 'MMM yyyy');
-          monthlyTrend[month] = (monthlyTrend[month] || 0) + 1;
+          const years = story.yearsOfExperience || 0;
+          if (years <= 3) experienceCounts['0-3 years']++;
+          else if (years <= 6) experienceCounts['4-6 years']++;
+          else if (years <= 9) experienceCounts['7-9 years']++;
+          else experienceCounts['10+ years']++;
         });
 
         // Calculate channels distribution
-        const channelCounts: { [key: string]: number } = {};
+        const channelCounts: Distribution = {};
         stories.forEach(story => {
           if (Array.isArray(story.channels)) {
             story.channels.forEach(channel => {
@@ -137,41 +105,84 @@ export default function Insights() {
             });
           }
         });
-        const channelsDistribution = Object.entries(channelCounts).reduce((acc, [key, value]) => {
-          acc[key] = Math.round((value / totalStories) * 100);
-          return acc;
-        }, {} as { [key: string]: number });
 
-        if (mounted) {
-          setInsightData({
-            totalStories,
-            totalCompanies,
-            avgWaitDays,
-            verticalDistribution,
-            industryDistribution,
-            experienceDistribution,
-            monthlyTrend,
-            channelsDistribution,
-          });
-        }
+        // Calculate monthly trend
+        const monthlyTrend: Distribution = {};
+        stories.forEach(story => {
+          if (story.submittedAt) {
+            const month = format(new Date(story.submittedAt), 'MMM yyyy');
+            monthlyTrend[month] = (monthlyTrend[month] || 0) + 1;
+          }
+        });
+
+        // Find top industry
+        let topIndustry = { name: '', count: 0 };
+        Object.entries(industryCounts).forEach(([industry, count]) => {
+          if (count > topIndustry.count) {
+            topIndustry = { name: industry, count };
+          }
+        });
+
+        const topIndustryPercentage = Math.round((topIndustry.count / totalStories) * 100);
+
+        setInsightData({
+          totalStories,
+          averageWaitDays,
+          uniqueCompanies,
+          topIndustry: {
+            name: topIndustry.name,
+            percentage: topIndustryPercentage
+          },
+          verticalDistribution: verticalCounts,
+          industryDistribution: industryCounts,
+          experienceDistribution: experienceCounts,
+          channelsDistribution: channelCounts,
+          monthlyTrend
+        });
       } catch (err) {
         console.error('Error fetching insights:', err);
-        if (mounted) {
-          setError('Failed to load insights. Please try refreshing the page.');
-        }
+        setError('Failed to load insights. Please try refreshing the page.');
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     fetchInsights();
-
-    return () => {
-      mounted = false;
-    };
   }, []);
+
+  const renderDistributionChart = (
+    title: string,
+    data: Distribution,
+    color: string
+  ) => {
+    const sortedData = Object.entries(data)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5);
+    
+    const maxValue = Math.max(...sortedData.map(([, value]) => value));
+
+    return (
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h3 className="text-sm font-medium text-gray-900 mb-4">{title}</h3>
+        <div className="space-y-4">
+          {sortedData.map(([key, value]) => (
+            <div key={key} className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">{key}</span>
+                <span className="text-sm font-medium">{value} ({Math.round((value / maxValue) * 100)}%)</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2">
+                <div
+                  className={`${color} h-2 rounded-full transition-all duration-500`}
+                  style={{ width: `${(value / maxValue) * 100}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   if (error) {
     return (
@@ -191,22 +202,6 @@ export default function Insights() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading insights...</div>
-      </div>
-    );
-  }
-
-  if (!insightData) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">No data available</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
@@ -222,172 +217,135 @@ export default function Insights() {
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="space-y-6">
           <div className="space-y-2">
-            <h1 className="text-xl font-semibold text-gray-900">Interview Ghosting Insights</h1>
-            <p className="text-sm text-gray-600">Data-driven insights about interview ghosting patterns across the industry.</p>
+            <h1 className="text-xl font-semibold text-gray-900">Insights</h1>
+            <p className="text-sm text-gray-600">
+              Analytics and trends from our ghosting reports database
+            </p>
           </div>
 
-          {/* Key Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-500" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900">{insightData.totalStories.toLocaleString()}</div>
-                  <div className="text-sm font-medium text-gray-600">Total Stories</div>
-                </div>
-              </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-sm text-gray-600">Loading insights...</p>
             </div>
-
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-purple-50 rounded-lg">
-                  <Building2 className="w-6 h-6 text-purple-500" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900">{insightData.totalCompanies.toLocaleString()}</div>
-                  <div className="text-sm font-medium text-gray-600">Companies</div>
-                </div>
-              </div>
+          ) : !insightData ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No data available</p>
             </div>
-
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-amber-50 rounded-lg">
-                  <Target className="w-6 h-6 text-amber-500" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {Object.entries(insightData.industryDistribution)
-                      .sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A'}
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <div className="p-4 bg-gradient-to-br from-blue-50 to-white">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-blue-500/10 rounded-lg">
+                        <Users className="w-7 h-7 text-blue-600" />
+                      </div>
+                      <div className="text-sm font-medium text-blue-900">Total Stories</div>
+                    </div>
                   </div>
-                  <div className="text-sm font-medium text-gray-600">Most Ghosted Industry</div>
+                  <div className="px-4 py-4">
+                    <div className="text-3xl font-bold text-gray-900">
+                      {insightData.totalStories.toLocaleString()}
+                    </div>
+                    <div className="mt-1 text-sm text-gray-500">
+                      stories shared by the community
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <div className="p-4 bg-gradient-to-br from-purple-50 to-white">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-purple-500/10 rounded-lg">
+                        <Building2 className="w-7 h-7 text-purple-600" />
+                      </div>
+                      <div className="text-sm font-medium text-purple-900">Companies</div>
+                    </div>
+                  </div>
+                  <div className="px-4 py-4">
+                    <div className="text-3xl font-bold text-gray-900">
+                      {insightData.uniqueCompanies.toLocaleString()}
+                    </div>
+                    <div className="mt-1 text-sm text-gray-500">
+                      unique companies reported
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <div className="p-4 bg-gradient-to-br from-amber-50 to-white">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-amber-500/10 rounded-lg">
+                        <Clock className="w-7 h-7 text-amber-600" />
+                      </div>
+                      <div className="text-sm font-medium text-amber-900">Average Wait</div>
+                    </div>
+                  </div>
+                  <div className="px-4 py-4">
+                    <div className="text-3xl font-bold text-gray-900">
+                      {insightData.averageWaitDays}
+                    </div>
+                    <div className="mt-1 text-sm text-gray-500">
+                      days without response
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  <div className="p-4 bg-gradient-to-br from-green-50 to-white">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-green-500/10 rounded-lg">
+                        <Briefcase className="w-7 h-7 text-green-600" />
+                      </div>
+                      <div className="text-sm font-medium text-green-900">Top Industry</div>
+                    </div>
+                  </div>
+                  <div className="px-4 py-4">
+                    <div className="text-3xl font-bold text-gray-900">
+                      {insightData.topIndustry.name}
+                    </div>
+                    <div className="mt-1 text-sm text-gray-500">
+                      most reported sector
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Detailed Insights Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Vertical Distribution */}
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-900 mb-4">Verticals Distribution</h3>
-              <div className="space-y-4">
-                {Object.entries(insightData.verticalDistribution)
-                  .sort(([, a], [, b]) => b - a)
-                  .slice(0, 5)
-                  .map(([vertical, percentage]) => (
-                    <div key={vertical} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">{vertical}</span>
-                        <span className="text-sm font-medium">{percentage}%</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div
-                          className="bg-blue-500 h-2 rounded-full"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderDistributionChart('Verticals Distribution', insightData.verticalDistribution, 'bg-blue-500')}
+                {renderDistributionChart('Industry Distribution', insightData.industryDistribution, 'bg-purple-500')}
+                {renderDistributionChart('Experience Distribution', insightData.experienceDistribution, 'bg-green-500')}
+                {renderDistributionChart('Communication Channels', insightData.channelsDistribution, 'bg-amber-500')}
               </div>
-            </div>
 
-            {/* Industry Distribution */}
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-900 mb-4">Industry Distribution</h3>
-              <div className="space-y-4">
-                {Object.entries(insightData.industryDistribution)
-                  .sort(([, a], [, b]) => b - a)
-                  .slice(0, 5)
-                  .map(([industry, percentage]) => (
-                    <div key={industry} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">{industry}</span>
-                        <span className="text-sm font-medium">{percentage}%</span>
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="text-sm font-medium text-gray-900 mb-4">Monthly Trend</h3>
+                <div className="space-y-4">
+                  {Object.entries(insightData.monthlyTrend)
+                    .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
+                    .slice(0, 6)
+                    .reverse()
+                    .map(([month, count]) => (
+                      <div key={month} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">{month}</span>
+                          <span className="text-sm font-medium">{count} stories</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-2">
+                          <div
+                            className="bg-indigo-500 h-2 rounded-full transition-all duration-500"
+                            style={{ 
+                              width: `${(count / Math.max(...Object.values(insightData.monthlyTrend))) * 100}%` 
+                            }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div
-                          className="bg-purple-500 h-2 rounded-full"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
-            </div>
-
-            {/* Experience Distribution */}
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-900 mb-4">Experience Distribution</h3>
-              <div className="space-y-4">
-                {Object.entries(insightData.experienceDistribution)
-                  .map(([range, percentage]) => (
-                    <div key={range} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">{range}</span>
-                        <span className="text-sm font-medium">{percentage}%</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div
-                          className="bg-green-500 h-2 rounded-full"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-            {/* Channels Distribution */}
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-900 mb-4">Communication Channels</h3>
-              <div className="space-y-4">
-                {Object.entries(insightData.channelsDistribution)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([channel, percentage]) => (
-                    <div key={channel} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">{channel}</span>
-                        <span className="text-sm font-medium">{percentage}%</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div
-                          className="bg-indigo-500 h-2 rounded-full"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-            {/* Monthly Trend */}
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-900 mb-4">Monthly Trend</h3>
-              <div className="space-y-4">
-                {Object.entries(insightData.monthlyTrend)
-                  .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-                  .slice(0, 6)
-                  .reverse()
-                  .map(([month, count]) => (
-                    <div key={month} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">{month}</span>
-                        <span className="text-sm font-medium">{count} stories</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div
-                          className="bg-amber-500 h-2 rounded-full"
-                          style={{ width: `${(count / Math.max(...Object.values(insightData.monthlyTrend))) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>
