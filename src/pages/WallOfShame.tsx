@@ -189,7 +189,7 @@ export default function WallOfShame() {
             <p className="text-sm text-gray-600">
               {viewType === 'candidate' 
                 ? "Companies ranked by longest interview ghosting periods. Shows total reports per company."
-                : "Candidates ranked by longest hiring process ghosting. Shows total reports from recruiters."}
+                : "Shows Companies that were ghosted by Candidates during active hiring processes."}
             </p>
           </div>
 
