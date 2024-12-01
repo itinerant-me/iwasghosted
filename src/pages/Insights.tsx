@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Users, Building2, Briefcase, Clock } from 'lucide-react';
+import { Users, Building2, Briefcase, Clock, User, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
+import { useView } from '../context/ViewContext';
 
 interface Distribution {
   [key: string]: number;
@@ -27,6 +28,8 @@ export default function Insights() {
   const [insightData, setInsightData] = useState<InsightData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { viewType, setViewType } = useView();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     const fetchInsights = async () => {
@@ -36,7 +39,13 @@ export default function Insights() {
         const storiesRef = collection(db, 'stories');
         const q = query(storiesRef);
         const querySnapshot = await getDocs(q);
-        const stories = querySnapshot.docs.map(doc => doc.data());
+        const allStories = querySnapshot.docs.map(doc => doc.data());
+        
+        // Filter stories based on viewType
+        const stories = allStories.filter(story => {
+          const type = story.type || 'candidate'; // Default to candidate for older entries
+          return viewType === 'recruiter' ? type === 'recruiter' : type !== 'recruiter';
+        });
         
         if (stories.length === 0) {
           setInsightData({
@@ -148,7 +157,7 @@ export default function Insights() {
     };
 
     fetchInsights();
-  }, []);
+  }, [viewType]);
 
   const renderDistributionChart = (
     title: string,
@@ -206,11 +215,77 @@ export default function Insights() {
     <div className="min-h-screen bg-gray-50">
       <div className="sticky top-0 z-10 bg-gray-50 border-b border-gray-200">
         <div className="max-w-5xl mx-auto px-4 py-3">
-          <nav className="flex items-center space-x-2 text-sm text-gray-500">
-            <a href="/" className="hover:text-gray-700 transition-colors">iwg</a>
-            <span>&gt;</span>
-            <span className="text-gray-900">Insights</span>
-          </nav>
+          <div className="flex items-center justify-between">
+            <nav className="flex items-center space-x-2 text-sm text-gray-500">
+              <a href="/" className="hover:text-gray-700 transition-colors">iwg</a>
+              <span>&gt;</span>
+              <span className="text-gray-900">Insights</span>
+            </nav>
+
+            {/* View Type Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-black transition-colors rounded-lg hover:bg-gray-50"
+              >
+                <span className="flex items-center gap-1.5">
+                  {viewType === 'candidate' ? (
+                    <>
+                      <Building2 className="w-3.5 h-3.5" />
+                      BY A COMPANY
+                    </>
+                  ) : (
+                    <>
+                      <User className="w-3.5 h-3.5" />
+                      BY A CANDIDATE
+                    </>
+                  )}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-1 w-52 bg-white rounded-lg shadow-lg ring-1 ring-black/5 py-1 animate-in fade-in slide-in-from-top-1 duration-100">
+                  <button
+                    onClick={() => {
+                      setViewType('candidate');
+                      setIsDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center whitespace-nowrap gap-2.5 px-3 py-2 text-xs tracking-wide uppercase hover:bg-gray-50 transition-colors"
+                  >
+                    <Building2 className="w-3.5 h-3.5 shrink-0" />
+                    <span className={viewType === 'candidate' ? 'text-black font-medium' : 'text-gray-600'}>
+                      BY A COMPANY
+                    </span>
+                    {viewType === 'candidate' && (
+                      <span className="ml-auto bg-black/5 text-black/70 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider shrink-0">
+                        ACTIVE
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setViewType('recruiter');
+                      setIsDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center whitespace-nowrap gap-2.5 px-3 py-2 text-xs tracking-wide uppercase hover:bg-gray-50 transition-colors"
+                  >
+                    <User className="w-3.5 h-3.5 shrink-0" />
+                    <span className={viewType === 'recruiter' ? 'text-black font-medium' : 'text-gray-600'}>
+                      BY A CANDIDATE
+                    </span>
+                    {viewType === 'recruiter' && (
+                      <span className="ml-auto bg-black/5 text-black/70 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase tracking-wider shrink-0">
+                        ACTIVE
+                      </span>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -219,7 +294,9 @@ export default function Insights() {
           <div className="space-y-2">
             <h1 className="text-xl font-semibold text-gray-900">Insights</h1>
             <p className="text-sm text-gray-600">
-              Analytics and trends from our ghosting reports database
+              {viewType === 'recruiter' 
+                ? "Statistics about candidate ghosting during hiring processes. Shared by recruiters to help other recruiters."
+                : "Statistics about company ghosting from a candidate's perspective."}
             </p>
           </div>
 
@@ -234,79 +311,54 @@ export default function Insights() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="p-4 bg-gradient-to-br from-blue-50 to-white">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-blue-500/10 rounded-lg">
-                        <Users className="w-7 h-7 text-blue-600" />
-                      </div>
-                      <div className="text-sm font-medium text-blue-900">Total Stories</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <Users className="w-5 h-5 text-blue-600" />
                     </div>
-                  </div>
-                  <div className="px-4 py-4">
-                    <div className="text-3xl font-bold text-gray-900">
-                      {insightData.totalStories.toLocaleString()}
-                    </div>
-                    <div className="mt-1 text-sm text-gray-500">
-                      stories shared by the community
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900">Total Stories</h3>
+                      <p className="text-2xl font-semibold">{insightData.totalStories}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="p-4 bg-gradient-to-br from-purple-50 to-white">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-purple-500/10 rounded-lg">
-                        <Building2 className="w-7 h-7 text-purple-600" />
-                      </div>
-                      <div className="text-sm font-medium text-purple-900">Companies</div>
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 rounded-lg">
+                      <Clock className="w-5 h-5 text-emerald-600" />
                     </div>
-                  </div>
-                  <div className="px-4 py-4">
-                    <div className="text-3xl font-bold text-gray-900">
-                      {insightData.uniqueCompanies.toLocaleString()}
-                    </div>
-                    <div className="mt-1 text-sm text-gray-500">
-                      unique companies reported
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900">Average Wait</h3>
+                      <p className="text-2xl font-semibold">{insightData.averageWaitDays} days</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="p-4 bg-gradient-to-br from-amber-50 to-white">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-amber-500/10 rounded-lg">
-                        <Clock className="w-7 h-7 text-amber-600" />
-                      </div>
-                      <div className="text-sm font-medium text-amber-900">Average Wait</div>
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-violet-50 rounded-lg">
+                      <Building2 className="w-5 h-5 text-violet-600" />
                     </div>
-                  </div>
-                  <div className="px-4 py-4">
-                    <div className="text-3xl font-bold text-gray-900">
-                      {insightData.averageWaitDays}
-                    </div>
-                    <div className="mt-1 text-sm text-gray-500">
-                      days without response
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900">
+                        {viewType === 'recruiter' ? 'Unique Candidates' : 'Unique Companies'}
+                      </h3>
+                      <p className="text-2xl font-semibold">{insightData.uniqueCompanies}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="p-4 bg-gradient-to-br from-green-50 to-white">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-green-500/10 rounded-lg">
-                        <Briefcase className="w-7 h-7 text-green-600" />
-                      </div>
-                      <div className="text-sm font-medium text-green-900">Top Industry</div>
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-50 rounded-lg">
+                      <Briefcase className="w-5 h-5 text-amber-600" />
                     </div>
-                  </div>
-                  <div className="px-4 py-4">
-                    <div className="text-3xl font-bold text-gray-900">
-                      {insightData.topIndustry.name}
-                    </div>
-                    <div className="mt-1 text-sm text-gray-500">
-                      most reported sector
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-900">Top Industry</h3>
+                      <p className="text-2xl font-semibold">{insightData.topIndustry.percentage}%</p>
+                      <p className="text-xs text-gray-500 mt-1">{insightData.topIndustry.name}</p>
                     </div>
                   </div>
                 </div>

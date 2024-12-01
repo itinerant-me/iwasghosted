@@ -1,6 +1,7 @@
 import './index.css'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import GhostedStory from './pages/GhostedStory'
+import RecruiterGhostedStory from './pages/RecruiterGhostedStory'
 import AllStories from './pages/AllStories'
 import LandingPage from './pages/LandingPage'
 import WallOfShame from './pages/WallOfShame'
@@ -9,6 +10,7 @@ import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
 import About from './pages/About'
 import Header from './components/Header'
+import { ViewProvider } from './context/ViewContext'
 
 function AppContent() {
   const location = useLocation();
@@ -20,6 +22,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/submit" element={<GhostedStory />} />
+        <Route path="/submit-recruiter" element={<RecruiterGhostedStory />} />
         <Route path="/stories" element={<AllStories />} />
         <Route path="/wall-of-shame" element={<WallOfShame />} />
         <Route path="/insights" element={<Insights />} />
@@ -33,9 +36,11 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <ViewProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </ViewProvider>
   )
 }
 

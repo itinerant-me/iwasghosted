@@ -1,11 +1,14 @@
 import { ChevronRight, Mail, Coffee } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import StoryTypeModal from '../components/StoryTypeModal';
 
 export default function About() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -119,13 +122,19 @@ export default function About() {
 
         {/* Call to Action */}
         <div className="mt-16 text-center">
-          <a 
-            href="/submit" 
+          <button 
+            onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-black text-white hover:bg-gray-800 transition-colors"
           >
             Share Your Story
-          </a>
+          </button>
         </div>
+
+        {/* Share Story Modal */}
+        <StoryTypeModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
       </div>
 
       {/* Footer */}

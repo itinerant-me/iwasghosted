@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dropdown styles */
+.dropdown-menu {
+  display: block;
+  position: absolute;
+  z-index: 50;
+}
+
 /* Hide preview functionality on mobile */
 @media (max-width: 768px) {
   /* Hide preview content */

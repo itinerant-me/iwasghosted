@@ -6,12 +6,12 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <header className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <NavLink to="/" className="flex items-center gap-2 text-gray-900">
-            <span className="font-semibold font-mono tracking-tight min-w-[120px]">iwasghosted</span>
+            <span className="font-semibold font-mono tracking-tight">iwasghosted</span>
           </NavLink>
 
           {/* Desktop Navigation */}
@@ -40,12 +40,6 @@ export default function Header() {
             >
               Insights
             </NavLink>
-            <NavLink
-              to="/submit"
-              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:bg-gray-800"
-            >
-              Share Your Story
-            </NavLink>
           </nav>
 
           {/* Mobile menu button */}
@@ -54,9 +48,9 @@ export default function Header() {
             className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
           >
             {isMenuOpen ? (
-              <X className="block h-6 w-6" aria-hidden="true" />
+              <X className="h-6 w-6" aria-hidden="true" />
             ) : (
-              <Menu className="block h-6 w-6" aria-hidden="true" />
+              <Menu className="h-6 w-6" aria-hidden="true" />
             )}
           </button>
         </div>
@@ -64,8 +58,8 @@ export default function Header() {
 
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-b border-gray-200">
+        <div className="md:hidden bg-white border-b border-gray-200">
+          <div className="px-2 pt-2 pb-3 space-y-1">
             <NavLink
               to="/stories"
               className={({ isActive }) =>
@@ -98,13 +92,6 @@ export default function Header() {
               onClick={() => setIsMenuOpen(false)}
             >
               Insights
-            </NavLink>
-            <NavLink
-              to="/submit"
-              className="block w-full px-3 py-2 text-base font-medium text-center text-white bg-black rounded-md hover:bg-gray-800"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Share Your Story
             </NavLink>
           </div>
         </div>
